@@ -91,6 +91,7 @@ Z1FAN!AUTO           # Set zone 1 fan mode
 Z1HOLD!120           # Hold zone 1 for 120 minutes
 Z1HOLD!on            # Permanent hold
 Z1HOLD!off           # Cancel hold, resume schedule
+Z1UNOCC!on           # Zone 1 Away by name (3B02 unoccupied bit); off releases it
 ```
 
 ### Clock verbs

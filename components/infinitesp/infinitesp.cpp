@@ -2217,6 +2217,44 @@ void InfinitESPComponent::set_displayed_zone(uint8_t zone) {
   ESP_LOGI("InfinitESP", "Set displayed zone=%u", zone);
 }
 
+void InfinitESPComponent::set_zone_unoccupied(uint8_t zone, bool unoccupied) {
+  if (!sam_enabled())
+    return;
+  if (zone < 1 || zone > 8) {
+    ESP_LOGW("InfinitESP", "Unoccupied zone %u out of range (1-8)", zone);
+    return;
+  }
+  auto *state_data = get_register(sam_address_, REG_SAM_STATE);
+  // Same refusal as set_displayed_zone: a partial mirror would zero every
+  // field we do not carry.
+  if (!state_data || state_data->size() < REG3B02_SIZE) {
+    ESP_LOGW("InfinitESP", "Set zone %u unoccupied=%d FAILED: no cached 3B02 data", zone, unoccupied);
+    return;
+  }
+
+  std::vector<uint8_t> data = *state_data;
+  uint8_t before = data[REG3B02_UNOCCUPIED];
+  uint8_t bit = (uint8_t) (1 << (zone - 1));
+  if (unoccupied)
+    data[REG3B02_UNOCCUPIED] |= bit;
+  else
+    data[REG3B02_UNOCCUPIED] &= (uint8_t) ~bit;
+  mirror_to_sam_(REG_SAM_STATE, data);
+
+  // Solo 3B02 write flagged for the unoccupied bitmap only; time and the
+  // other fields ride along unflagged (see set_displayed_zone). The
+  // thermostat ACKs, raises 3B0E, and acts within a few seconds: bit set is
+  // Away by name on the glass, bit cleared returns the zone to its computed
+  // activity (Home when scheduling is off).
+  {
+    uint16_t change_flags = CHANGE_UNOCCUPIED;
+    std::vector<uint8_t> payload_3b02 = {0x00, 0x3B, 0x02, 0x00, (uint8_t) (change_flags >> 8), (uint8_t) (change_flags & 0xff)};
+    payload_3b02.insert(payload_3b02.end(), data.begin() + 3, data.end());
+    send_write_frame_(ADDR_THERMOSTAT, 0x01, payload_3b02);
+  }
+  ESP_LOGI("InfinitESP", "Set zone %u unoccupied=%d (bitmap 0x%02X -> 0x%02X)", zone, unoccupied, before, data[REG3B02_UNOCCUPIED]);
+}
+
 void InfinitESPComponent::set_displayed_clock(uint8_t weekday, uint16_t minutes) {
   if (!sam_enabled())
     return;

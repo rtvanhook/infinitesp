@@ -38,6 +38,7 @@ PER_ZONE_ENTITIES = [
     {"domain": "sensor", "type": "temperature", "label": "Temperature", "flag": "temperature"},
     {"domain": "sensor", "type": "humidity", "label": "Humidity", "flag": "humidity"},
     {"domain": "binary_sensor", "type": "occupancy", "label": "Occupancy", "flag": "occupancy"},
+    {"domain": "switch", "type": "unoccupied", "label": "Unoccupied", "flag": "unoccupied"},
     {"domain": "text_sensor", "type": "zone_name", "label": "Name", "flag": "zone_name"},
     {"domain": "text_sensor", "type": "hold_state", "label": "Hold State", "flag": "hold_state"},
     {"domain": "text_sensor", "type": "comfort_profile", "label": None, "flag": "comfort_profile"},
@@ -137,6 +138,7 @@ _ZONE_SCOPED = {
     "binary_sensor": {"occupancy"},
     "text_sensor": {"zone_name", "hold_state", "comfort_profile"},
     "select": {"fan_mode"},
+    "switch": {"unoccupied"},
     "cover": {None},
     "datetime": {None},
     # Keyed by flavor name, not None: the number schema fills a default

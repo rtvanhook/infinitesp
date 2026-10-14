@@ -17,6 +17,7 @@ InfinitESP speaks the Carrier ABCD bus protocol and registers as a SAM (address 
 | **Sensors** | Zone temperature, zone humidity, outdoor air temp, blower RPM, airflow CFM, compressor RPM, ODU demand/stage/modulation, expansion valve position, superheat/subcooling targets & actuals, ODU temperatures (outdoor/coil/suction/discharge) plus suction superheat, vacation min/max temps |
 | **Binary Sensors** | Bus online/offline status, compressor running, electric heat active, per-zone occupancy (active_fault deprecated) |
 | **Selects** | System mode (heat/cool/auto/off; emergency heat/heat pump behind an experimental flag), per-zone fan speed (auto/low/med/high) |
+| **Switches** | Per-zone unoccupied (the thermostat's own Away state, by name on the wall control) |
 | **Text Sensors** | Zone names, hold state, thermostat WiFi SSID/hostname/MAC, proxy server, dealer info, comfort profile dump |
 
 ## Targeted Systems
@@ -190,7 +191,7 @@ Full type-by-type reference for every hub option and entity type: [docs/entity-r
 
 Each zone's sensors and controls, plus the system-wide entities, are generated automatically from the `climate:` blocks you declare. You only need to declare them if you want to change defaults.
 
-- **Per zone** (from each climate block): temperature, humidity, occupancy, zone name, hold state, comfort profile, fan mode select, hold-until time, hold-minutes number, and the damper cover (generated on every zone; it publishes only when a zone controller is on the bus, see [Covers](#covers)).
+- **Per zone** (from each climate block): temperature, humidity, occupancy, unoccupied switch, zone name, hold state, comfort profile, fan mode select, hold-until time, hold-minutes number, and the damper cover (generated on every zone; it publishes only when a zone controller is on the bus, see [Covers](#covers)).
 - **System-wide**: outdoor temperature, blower RPM, airflow, IDU heat stage, compressor running, bus status, ODU temperature/stage sensors, vacation setpoints, vacation duration (number, see below), heat source (furnace / heat_pump / electric / none), fault history and fault timestamp. The deprecated `electric_heat` binary sensor no longer publishes (0316[0] is the source-blind IDU heat stage; use `idu_heat_stage` + `heat_source`).
 - **Diagnostics** (entity category diagnostic): IDU/ODU cycle and hour counters, thermostat wifi/dealer strings, thermostat/IDU/ODU manufacture dates, firmware version, and the manual clock-sync pair (button + result sensor, see [Thermostat Clock](#thermostat-clock)). Disable the whole group with `auto_diagnostics: false` in the `infinitesp:` block.
 - **Equipment-conditional** (generated disabled by default, enable in HA if your hardware serves them): the variable-speed ODU family — compressor RPM, ODU requested CFM, expansion valve, float registers, discharge/suction temperatures, superheat.

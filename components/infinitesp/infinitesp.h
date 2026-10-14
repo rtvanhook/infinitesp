@@ -265,6 +265,13 @@ static const uint8_t REG3B02_SIZE = 29;
 static const uint16_t CHANGE_WEEKDAY = 0x080;
 static const uint16_t CHANGE_MINUTES = 0x100;
 static const uint16_t CHANGE_DISPLAYED_ZONE = 0x200;
+// Byte 21 (zones_unoccupied bitmap). Verified 2026-10-14 on a Bryant Evolution
+// Connex (SYSTXBBECC01-B, two zones + real zone board): the write is ACKed, the
+// thermostat raises 3B0E, and adopts it. Bit set: the zone goes to Away by name
+// (glass reads "Away", setpoints move to the away row). Bit cleared: the zone
+// leaves Away and the thermostat recomputes its activity (Home by name when
+// scheduling is off). Presumably what a real SAM01 sends for UNOCC!ON/OFF.
+static const uint16_t CHANGE_UNOCCUPIED = 0x008;
 
 // Register 3B03 layout offsets (see AGENTS.md for full layout)
 static const uint8_t REG3B03_ACTIVE_ZONES = 0;
@@ -667,6 +674,10 @@ class InfinitESPComponent : public Component, public uart::UARTDevice {
   // tstat tested; adoption is generation-dependent (UIZ/UID family yes, newer
   // ITC touch units ignore it). Issue #37, verified 2026-09-20.
   void set_displayed_zone(uint8_t zone);
+  // Set or clear one zone's bit in the 3B02 unoccupied bitmap (CHANGE_UNOCCUPIED).
+  // Only the target zone's bit is touched: the thermostat marks inactive zones
+  // unoccupied itself (a two-zone system reads 0xFC) and those bits ride along.
+  void set_zone_unoccupied(uint8_t zone, bool unoccupied);
 
   // Sets the thermostat's displayed clock: SAM 3B02 byte 25 weekday (0=Sunday)
   // and bytes 26..27 minutes-since-midnight BE16, written with the matching

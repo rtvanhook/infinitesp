@@ -110,12 +110,12 @@ user's preferred display unit.
 | Key | Description |
 |---|---|
 | `zone` | 1-8, required. |
-| opt-out flags | `temperature`, `humidity`, `occupancy`, `zone_name`, `hold_state`, `comfort_profile`, `fan_mode`, `damper`, `hold_until`, `hold_minutes`. All default `true`; set `false` to drop that generated entity for this zone. |
+| opt-out flags | `temperature`, `humidity`, `occupancy`, `unoccupied`, `zone_name`, `hold_state`, `comfort_profile`, `fan_mode`, `damper`, `hold_until`, `hold_minutes`. All default `true`; set `false` to drop that generated entity for this zone. |
 
 ## Generated entity surface
 
 Per zone (from each climate block): temperature and humidity sensors, occupancy binary
-sensor, zone name and hold state text sensors, comfort profile text sensor, fan mode
+sensor, unoccupied switch, zone name and hold state text sensors, comfort profile text sensor, fan mode
 select, damper cover, hold-until time entity, hold-minutes number.
 
 System-wide core: bus status, electric heat, compressor running binary sensors. Outdoor
@@ -286,6 +286,26 @@ thermostats the `heat_pump` write has additionally been observed turning the sys
 off mid-call, and `off` writes can be ignored while heating. Those two options are
 hidden from the System Mode select unless `experimental_heat_source_modes` is set on
 the hub, and every use logs a warning. Treat them as protocol experiments, not control.
+
+## Switch types
+
+| Type | Zone | Generation | Notes |
+|---|---|---|---|
+| `unoccupied` | yes | per-zone | the thermostat's Away state for the zone |
+
+`unoccupied` is the zone's bit in SAM register 3B02 byte 21 (`zones_unoccupied`),
+the same byte the occupancy binary sensor reads, opposite polarity. Reads track the
+thermostat. Writes send a 3B02 write flagged `CHANGE_UNOCCUPIED` (0x0008) with only
+that zone's bit changed; the thermostat ACKs, raises 3B0E, and acts within a few
+seconds. **On** puts the zone in Away by name: the wall control reads "Away" and the
+setpoints move to the away comfort row. **Off** clears Away and the thermostat
+recomputes the zone's activity, which with scheduling off is Home, again by name.
+This is the one activity a SAM can name on the wall control; a setpoint write from
+any source afterwards drops the label back to "Manual". Presumably the write a real
+SAM01 sends for `UNOCC!ON/OFF`. Verified on a Bryant Evolution Connex
+(SYSTXBBECC01-B) with a real zone board; other wall controls untested. Requires
+SAM emulation; on passive installs the entity stays unknown. Generated for every
+declared zone; `unoccupied: false` on the climate block suppresses it.
 
 ## Covers
 

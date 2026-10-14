@@ -242,7 +242,7 @@ void SamAsciiComponent::process_line_(const std::string &line) {
     respond_(prefix, "ZONE: Z#RT Z#RH Z#HTSP Z#CLSP Z#FAN Z#HOLD Z#UNOCC Z#RHTG Z#OVR Z#OTMR Z#NAME");
     respond_(prefix, "ACCESSORY: FILTRLVL UVLVL HUMLVL VENTLVL FILTRRMD UVRMD HUMRMD VENTRMD");
     respond_(prefix, "VACATION: VACAT VACDAYS VACHOURS VACMINT VACMAXT VACMINH VACMAXH VACFAN  CONFIG: CFGDEAD CFGCPH CFGPER CFGPGM DEALER DEALERPH");
-    respond_(prefix, "SET: MODE!<mode> Z#HTSP!<temp> Z#CLSP!<temp> Z#FAN!<mode> Z#HOLD!<on|off|minutes> VACDAYS!<days> VACHOURS!<hours> VACMINT!<temp> VACMAXT!<temp> VACFAN!<mode>");
+    respond_(prefix, "SET: MODE!<mode> Z#HTSP!<temp> Z#CLSP!<temp> Z#FAN!<mode> Z#HOLD!<on|off|minutes> Z#UNOCC!<on|off> VACDAYS!<days> VACHOURS!<hours> VACMINT!<temp> VACMAXT!<temp> VACFAN!<mode>");
     respond_(prefix, "CLOCK: TIME!<HH:MM A/P | YYYY-MM-DDTHH:MM | NOW> DAY!<0-6>  (NOW = ESPHome time source; one 3B02 write; no auto-sync)");
     return;
   }
@@ -348,6 +348,20 @@ void SamAsciiComponent::process_line_(const std::string &line) {
       uint8_t heat_sp = (zones_data && zones_data->size() > REG3B03_HEAT_SETPOINTS + idx)
                             ? (*zones_data)[REG3B03_HEAT_SETPOINTS + idx] : 0;
       parent_->set_zone_setpoint(zone, heat_sp, (uint8_t) temp);
+      respond_(prefix, "ACK");
+      return;
+    }
+
+    if (write_cmd == "UNOCC") {
+      // The real SAM01's UNOCC!ON/OFF: the zone's bit in the 3B02 unoccupied bitmap
+      // (CHANGE_UNOCCUPIED). ON reads "Away" on the wall control, OFF releases it.
+      if (write_val == "ON") {
+        parent_->set_zone_unoccupied(zone, true);
+      } else if (write_val == "OFF") {
+        parent_->set_zone_unoccupied(zone, false);
+      } else {
+        respond_nak_(prefix, "VAL"); return;
+      }
       respond_(prefix, "ACK");
       return;
     }
